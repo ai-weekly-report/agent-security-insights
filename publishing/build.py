@@ -523,7 +523,6 @@ def _write_homepage(
             f'<a href="issues/{html.escape(issue.slug)}/">{html.escape(issue.issue_name)}</a>'
             f" <span>{html.escape(issue.period_start)}—{html.escape(issue.period_end)}</span>"
             f' <a href="issues/{html.escape(issue.slug)}/report.pdf">PDF</a>'
-            f' <a href="issues/{html.escape(issue.slug)}/summary.json">JSON</a>'
             "</li>"
         )
     page = _render_template(
@@ -591,7 +590,7 @@ def verify_site(site_root: Path, issues: list[Issue]) -> None:
         if "report.pdf" not in content and path.name == "index.html" and "issues/" in str(path):
             raise ValueError(f"Issue page has no PDF link: {path}")
     homepage = (site_root / "index.html").read_text(encoding="utf-8")
-    for target in ("latest.json", "publication-manifest.json", "summary.json"):
+    for target in ("latest.json", "publication-manifest.json"):
         if target not in homepage:
             raise ValueError(f"Homepage has no machine interface link for {target}")
 
