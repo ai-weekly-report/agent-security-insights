@@ -20,6 +20,11 @@
 
 报告的信息筛选、来源核查与推荐原则见 [方法说明](docs/methodology.md)。
 
+## 机器接口
+
+机器人可以从 GitHub Pages 读取最新一期概要、全部期次清单和每期独立概要 JSON。
+端点、字段和示例见 [机器接口说明](docs/machine-api.md)。
+
 ## 目录约定
 
 ```text

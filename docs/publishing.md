@@ -62,6 +62,7 @@ python3 -m http.server 8000 --directory site
 ```text
 site/
 ├── index.html
+├── latest.json
 ├── publication-manifest.json
 ├── assets/
 │   ├── site.css
@@ -70,11 +71,13 @@ site/
 ├── methodology/index.html
 └── issues/<slug>/
     ├── index.html
-    └── report.pdf
+    ├── report.pdf
+    └── summary.json
 ```
 
-`publication-manifest.json` 保存网站地址、最新期次、每期网页地址和 PDF 地址。它属于
-Pages 产物，不进入 Git。
+`latest.json` 保存最新一期结构化概要与 HTML/PDF 地址；`publication-manifest.json`
+保存全部期次及概要；每期 `summary.json` 提供独立历史接口。这些文件属于 Pages 产物，
+不进入 Git。完整格式见 [机器接口说明](machine-api.md)。
 
 ## 日间与夜间模式
 

@@ -237,11 +237,15 @@ h3 { margin-top: 2rem; font-size: 1.16rem; }
 .report-content th { background: var(--soft); }
 .report-content blockquote { margin: 24px 0; padding: 2px 20px; border-left: 3px solid var(--teal); color: var(--muted); }
 
-.archive-section { padding-top: 54px; padding-bottom: 72px; }
+.archive-section { padding-top: 54px; padding-bottom: 54px; }
 .section-heading h2 { margin-top: 0; }
 .archive-list { margin: 28px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
-.archive-list li { display: grid; grid-template-columns: 1fr auto auto; gap: 24px; padding: 18px 0; border-bottom: 1px solid var(--line); }
+.archive-list li { display: grid; grid-template-columns: 1fr auto auto auto; gap: 24px; padding: 18px 0; border-bottom: 1px solid var(--line); }
 .archive-list span { color: var(--muted); }
+.api-section { padding: 54px 30px 72px; border-top: 1px solid var(--line); }
+.api-section > p { color: var(--muted); }
+.api-links { display: flex; flex-wrap: wrap; gap: 12px 24px; margin: 24px 0 0; padding: 0; list-style: none; }
+.api-links a { font-weight: 650; }
 .page-content { max-width: var(--content); padding-top: 54px; padding-bottom: 72px; }
 .issue-navigation { max-width: var(--content); margin: 0 auto 64px; padding: 22px 30px; border-top: 1px solid var(--line); }
 footer { padding: 24px 30px; border-top: 1px solid var(--line); color: var(--muted); text-align: center; font-size: 0.9rem; }
@@ -293,6 +297,7 @@ footer { padding: 24px 30px; border-top: 1px solid var(--line); color: var(--mut
   .latest-issue { grid-template-columns: 1fr; gap: 38px; padding-top: 46px; }
   .article-layout { display: block; padding-left: 22px; padding-right: 22px; }
   .archive-list li { grid-template-columns: 1fr; gap: 4px; }
+  .api-links { display: grid; gap: 10px; }
   h1 { max-width: 100%; font-size: 2.15rem; word-break: break-word; text-wrap: balance; }
 }
 

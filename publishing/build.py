@@ -191,6 +191,81 @@ def normalize_summary(markdown: str) -> str:
     return markdown.strip() + "\n"
 
 
+def _pandoc_document(markdown: str) -> dict[str, object]:
+    result = subprocess.run(
+        ["pandoc", f"--from={MARKDOWN_FORMAT}", "--to=json"],
+        input=markdown,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return json.loads(result.stdout)
+
+
+def _pandoc_text(node: object) -> str:
+    pieces: list[str] = []
+
+    def visit(value: object) -> None:
+        if isinstance(value, list):
+            for item in value:
+                visit(item)
+            return
+        if not isinstance(value, dict):
+            return
+
+        node_type = value.get("t")
+        content = value.get("c")
+        if node_type == "Str" and isinstance(content, str):
+            pieces.append(content)
+        elif node_type in {"Space", "SoftBreak", "LineBreak"}:
+            pieces.append(" ")
+        elif node_type in {"Code", "Math"} and isinstance(content, list):
+            if len(content) > 1 and isinstance(content[1], str):
+                pieces.append(content[1])
+        elif node_type in {"Link", "Image", "Span"} and isinstance(content, list):
+            if len(content) > 1:
+                visit(content[1])
+        else:
+            visit(content)
+
+    visit(node)
+    return re.sub(r"\s+", " ", "".join(pieces)).strip()
+
+
+def parse_summary_items(markdown: str) -> list[dict[str, str]]:
+    document = _pandoc_document(normalize_summary(markdown))
+    items: list[dict[str, str]] = []
+    title = ""
+    paragraphs: list[str] = []
+
+    def flush() -> None:
+        nonlocal title, paragraphs
+        text = " ".join(paragraphs).strip()
+        if title and text:
+            items.append({"title": title, "text": text})
+        title = ""
+        paragraphs = []
+
+    for block in document.get("blocks", []):
+        if not isinstance(block, dict):
+            continue
+        block_type = block.get("t")
+        content = block.get("c")
+        if block_type == "Header" and isinstance(content, list) and content[0] == 3:
+            flush()
+            title = _pandoc_text(content[2])
+        elif title and block_type in {"Para", "Plain", "BulletList", "OrderedList"}:
+            text = _pandoc_text(content)
+            if text:
+                paragraphs.append(text)
+    flush()
+    return items
+
+
+def _issue_summary_items(issue: Issue) -> list[dict[str, str]]:
+    return parse_summary_items(_without_front_matter(issue.summary_path))
+
+
 def _report_body(issue: Issue) -> str:
     return _drop_first_h1(_without_front_matter(issue.report_path))
 
@@ -282,6 +357,7 @@ def _issue_urls(issue: Issue) -> dict[str, str]:
     return {
         "page_url": prefix,
         "pdf_url": prefix + "report.pdf",
+        "summary_url": prefix + "summary.json",
     }
 
 
@@ -301,11 +377,64 @@ def manifest_payload(issues: list[Issue], site_url: str) -> dict[str, object]:
                 "slug": issue.slug,
                 "page_url": urls["page_url"],
                 "pdf_url": urls["pdf_url"],
+                "summary_url": urls["summary_url"],
                 "page_absolute_url": site_url + urls["page_url"],
                 "pdf_absolute_url": site_url + urls["pdf_url"],
+                "summary_absolute_url": site_url + urls["summary_url"],
+                "summary": _issue_summary_items(issue),
             }
         )
-    return {"site_url": site_url, "latest_issue": latest.slug, "issues": issue_payloads}
+    return {
+        "schema_version": 1,
+        "site_url": site_url,
+        "latest_issue": latest.slug,
+        "latest_url": site_url + "latest.json",
+        "issues": issue_payloads,
+    }
+
+
+def _machine_issue_payload(issue: dict[str, object]) -> dict[str, object]:
+    return {
+        "schema_version": 1,
+        "slug": issue["slug"],
+        "issue": issue["issue"],
+        "title": issue["title"],
+        "period_start": issue["period_start"],
+        "period_end": issue["period_end"],
+        "published_at": issue["published_at"],
+        "url": issue["page_absolute_url"],
+        "pdf_url": issue["pdf_absolute_url"],
+        "summary_url": issue["summary_absolute_url"],
+        "summary": issue["summary"],
+    }
+
+
+def _write_machine_interfaces(site_root: Path, manifest: dict[str, object]) -> None:
+    issues = manifest["issues"]
+    if not isinstance(issues, list):
+        raise ValueError("Manifest issues must be a list")
+
+    latest_payload: dict[str, object] | None = None
+    for issue in issues:
+        if not isinstance(issue, dict):
+            continue
+        payload = _machine_issue_payload(issue)
+        payload["generated_at"] = manifest["generated_at"]
+        payload["source_commit"] = manifest["source_commit"]
+        output = site_root / str(issue["summary_url"])
+        output.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        if issue["slug"] == manifest["latest_issue"]:
+            latest_payload = payload
+
+    if latest_payload is None:
+        raise ValueError("Latest issue payload was not generated")
+    (site_root / "latest.json").write_text(
+        json.dumps(latest_payload, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
 
 
 def _write_issue_html(issue: Issue, site_root: Path, templates: Path) -> None:
@@ -394,6 +523,7 @@ def _write_homepage(
             f'<a href="issues/{html.escape(issue.slug)}/">{html.escape(issue.issue_name)}</a>'
             f" <span>{html.escape(issue.period_start)}—{html.escape(issue.period_end)}</span>"
             f' <a href="issues/{html.escape(issue.slug)}/report.pdf">PDF</a>'
+            f' <a href="issues/{html.escape(issue.slug)}/summary.json">JSON</a>'
             "</li>"
         )
     page = _render_template(
@@ -441,12 +571,14 @@ def verify_site(site_root: Path, issues: list[Issue]) -> None:
         site_root / "assets" / "site.css",
         site_root / "assets" / "site.js",
         site_root / "assets" / "icons.svg",
+        site_root / "latest.json",
     ]
     for issue in issues:
         required.extend(
             [
                 site_root / "issues" / issue.slug / "index.html",
                 site_root / "issues" / issue.slug / "report.pdf",
+                site_root / "issues" / issue.slug / "summary.json",
             ]
         )
     missing = [str(path) for path in required if not path.is_file() or path.stat().st_size == 0]
@@ -458,6 +590,10 @@ def verify_site(site_root: Path, issues: list[Issue]) -> None:
         content = path.read_text(encoding="utf-8")
         if "report.pdf" not in content and path.name == "index.html" and "issues/" in str(path):
             raise ValueError(f"Issue page has no PDF link: {path}")
+    homepage = (site_root / "index.html").read_text(encoding="utf-8")
+    for target in ("latest.json", "publication-manifest.json", "summary.json"):
+        if target not in homepage:
+            raise ValueError(f"Homepage has no machine interface link for {target}")
 
 
 def verify_pdf(pdf_path: Path) -> None:
@@ -539,6 +675,7 @@ def build(
     manifest = manifest_payload(issues, site_url)
     manifest["generated_at"] = datetime.now(timezone.utc).isoformat()
     manifest["source_commit"] = os.environ.get("GITHUB_SHA", "")
+    _write_machine_interfaces(staged, manifest)
     (staged / "publication-manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
@@ -575,6 +712,7 @@ def main() -> None:
     print(f"Published site: {manifest['site_url']}")
     print(f"Latest issue: {latest['page_absolute_url']}")
     print(f"Latest PDF: {latest['pdf_absolute_url']}")
+    print(f"Latest JSON: {manifest['latest_url']}")
     print(f"Archive: {manifest['site_url']}#archive")
 
 

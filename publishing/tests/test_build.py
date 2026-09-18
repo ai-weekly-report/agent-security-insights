@@ -17,6 +17,30 @@ class BuildModelTests(unittest.TestCase):
         summary = "# 本期概要\n\n### 重点\n\n内容。\n\n[阅读完整报告](report.md)\n"
         self.assertNotIn("report.md", build.normalize_summary(summary))
 
+    def test_parses_structured_summary_items(self):
+        summary = (
+            "# 本期概要\n\n"
+            "### 手机操作权限\n\n"
+            "豆包公布 **SAEP** 协议，详情见[说明](https://example.test)。\n\n"
+            "### 跨设备办公\n\n"
+            "WorkBuddy 支持任务跨终端同步。\n\n"
+            "[阅读完整报告](report.md)\n"
+        )
+
+        self.assertEqual(
+            build.parse_summary_items(summary),
+            [
+                {
+                    "title": "手机操作权限",
+                    "text": "豆包公布 SAEP 协议，详情见说明。",
+                },
+                {
+                    "title": "跨设备办公",
+                    "text": "WorkBuddy 支持任务跨终端同步。",
+                },
+            ],
+        )
+
     def test_discovers_published_issues_and_excludes_drafts(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -75,21 +99,30 @@ class BuildModelTests(unittest.TestCase):
         self.assertEqual(build.latest_issue(issues).slug, "new")
 
     def test_manifest_contains_stable_issue_urls(self):
-        issue = build.Issue(
-            title="T",
-            issue_name="2026 年 9 月刊",
-            period_start="2026-08-15",
-            period_end="2026-09-14",
-            published_at="2026-09-18",
-            slug="2026-08-15_2026-09-14",
-            status="published",
-            description="",
-            directory=Path("reports/2026/2026-08-15_2026-09-14"),
-            report_path=Path("report.md"),
-            summary_path=Path("summary.md"),
-        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            directory = Path(temp_dir)
+            summary_path = directory / "summary.md"
+            summary_path.write_text(
+                "# 本期概要\n\n### 重点\n\n概要正文。\n",
+                encoding="utf-8",
+            )
+            issue = build.Issue(
+                title="T",
+                issue_name="2026 年 9 月刊",
+                period_start="2026-08-15",
+                period_end="2026-09-14",
+                published_at="2026-09-18",
+                slug="2026-08-15_2026-09-14",
+                status="published",
+                description="",
+                directory=directory,
+                report_path=directory / "report.md",
+                summary_path=summary_path,
+            )
 
-        manifest = build.manifest_payload([issue], "https://example.test/agent-security-insights/")
+            manifest = build.manifest_payload(
+                [issue], "https://example.test/agent-security-insights/"
+            )
 
         self.assertEqual(manifest["latest_issue"], issue.slug)
         self.assertEqual(
@@ -97,6 +130,13 @@ class BuildModelTests(unittest.TestCase):
             "issues/2026-08-15_2026-09-14/",
         )
         self.assertTrue(manifest["issues"][0]["pdf_url"].endswith("/report.pdf"))
+        self.assertEqual(
+            manifest["issues"][0]["summary"],
+            [{"title": "重点", "text": "概要正文。"}],
+        )
+        self.assertTrue(
+            manifest["issues"][0]["summary_absolute_url"].endswith("/summary.json")
+        )
         json.dumps(manifest, ensure_ascii=False)
 
     def test_issue_assets_do_not_publish_dotfiles(self):
