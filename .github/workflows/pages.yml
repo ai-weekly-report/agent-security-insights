@@ -62,8 +62,10 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
+            fonts-texgyre \
             lmodern \
             poppler-utils \
+            texlive-fonts-recommended \
             texlive-lang-chinese \
             texlive-latex-extra \
             texlive-xetex
