@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>{{TITLE}} · 智能体安全与隐私观察</title>
+  {{THEME_BOOTSTRAP}}
+  <link rel="stylesheet" href="{{CSS_PATH}}">
+</head>
+<body>
+  <header class="site-header">
+    <a class="site-brand" href="{{HOME_PATH}}">智能体安全与隐私观察</a>
+    <div class="site-header-tools">
+      <nav aria-label="主导航">
+        <a href="{{HOME_PATH}}#archive">历期报告</a>
+        <a href="{{REPOSITORY_URL}}">GitHub</a>
+      </nav>
+      <button class="icon-button" type="button" data-theme-toggle aria-label="切换到夜间模式">
+        <svg class="theme-icon theme-icon-moon" aria-hidden="true"><use href="{{HOME_PATH}}assets/icons.svg#icon-moon"></use></svg>
+        <svg class="theme-icon theme-icon-sun" aria-hidden="true"><use href="{{HOME_PATH}}assets/icons.svg#icon-sun"></use></svg>
+        <span class="sr-only" data-theme-label>切换到夜间模式</span>
+      </button>
+    </div>
+  </header>
+  <main class="page-content">
+    {{CONTENT}}
+  </main>
+  <footer><p><a href="{{HOME_PATH}}">返回首页</a></p></footer>
+  <script defer src="{{HOME_PATH}}assets/site.js"></script>
+</body>
+</html>

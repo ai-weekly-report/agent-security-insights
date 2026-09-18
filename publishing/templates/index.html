@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="AI 智能体安全与隐私行业观察">
+  <title>{{TITLE}}</title>
+  {{THEME_BOOTSTRAP}}
+  <link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="site-brand" href="./">智能体安全与隐私观察</a>
+    <div class="site-header-tools">
+      <nav aria-label="主导航">
+        <a href="#archive">历期报告</a>
+        <a href="methodology/">编写方法</a>
+        <a href="{{REPOSITORY_URL}}">GitHub</a>
+      </nav>
+      <button class="icon-button" type="button" data-theme-toggle aria-label="切换到夜间模式">
+        <svg class="theme-icon theme-icon-moon" aria-hidden="true"><use href="assets/icons.svg#icon-moon"></use></svg>
+        <svg class="theme-icon theme-icon-sun" aria-hidden="true"><use href="assets/icons.svg#icon-sun"></use></svg>
+        <span class="sr-only" data-theme-label>切换到夜间模式</span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section class="latest-issue">
+      <div class="issue-heading">
+        <p class="eyebrow">最新一期</p>
+        <h1>{{TITLE}}</h1>
+        <p class="issue-name">{{LATEST_ISSUE}}</p>
+        <p class="issue-meta">观察周期：{{LATEST_PERIOD}}</p>
+        <div class="actions">
+          <a class="primary-action" href="issues/{{LATEST_SLUG}}/">阅读全文</a>
+          <a href="issues/{{LATEST_SLUG}}/report.pdf">下载 PDF</a>
+        </div>
+      </div>
+      <div class="summary-content">
+        {{SUMMARY}}
+      </div>
+    </section>
+
+    <section class="archive-section" id="archive">
+      <div class="section-heading">
+        <p class="eyebrow">Archive</p>
+        <h2>历期报告</h2>
+      </div>
+      <ol class="archive-list">
+        {{ARCHIVE}}
+      </ol>
+    </section>
+  </main>
+
+  <footer>
+    <p>网页与 PDF 由同一份 Markdown 自动生成。</p>
+  </footer>
+  <script defer src="assets/site.js"></script>
+</body>
+</html>

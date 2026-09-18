@@ -1,0 +1,24 @@
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+
+\definecolor{InsightInk}{HTML}{17212B}
+\definecolor{InsightTeal}{HTML}{176B73}
+\definecolor{InsightBlue}{HTML}{315E82}
+\definecolor{InsightMuted}{HTML}{5F6B76}
+
+\titleformat{\section}{\Large\bfseries\color{InsightInk}}{\thesection}{0.75em}{}
+\titleformat{\subsection}{\large\bfseries\color{InsightTeal}}{\thesubsection}{0.75em}{}
+\setlist{nosep,leftmargin=2em}
+\setcounter{tocdepth}{2}
+\setlength{\parindent}{2em}
+\setlength{\parskip}{0.35em}
+\linespread{1.28}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{InsightMuted}AI 智能体安全与隐私行业观察}
+\fancyhead[R]{\small\color{InsightMuted}\leftmark}
+\fancyfoot[C]{\thepage}
+\setlength{\headheight}{15pt}

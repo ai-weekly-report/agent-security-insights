@@ -1,0 +1,155 @@
+name: Build reports and deploy Pages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/pages.yml"
+      - "docs/methodology.md"
+      - "publishing/**"
+      - "reports/**"
+  pull_request:
+    paths:
+      - ".github/workflows/pages.yml"
+      - "docs/methodology.md"
+      - "publishing/**"
+      - "reports/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PANDOC_VERSION: "3.10.1"
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    outputs:
+      site_url: ${{ steps.publication.outputs.site_url }}
+      archive_url: ${{ steps.publication.outputs.archive_url }}
+      latest_issue_url: ${{ steps.publication.outputs.latest_issue_url }}
+      latest_pdf_url: ${{ steps.publication.outputs.latest_pdf_url }}
+      issue_count: ${{ steps.publication.outputs.issue_count }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - name: Set up Pandoc
+        uses: pandoc/actions/setup@v1
+        with:
+          version: ${{ env.PANDOC_VERSION }}
+
+      - name: Install PDF dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            lmodern \
+            poppler-utils \
+            texlive-lang-chinese \
+            texlive-latex-extra \
+            texlive-xetex
+
+      - name: Run unit and syntax checks
+        run: |
+          python3 -m unittest discover -s publishing/tests -v
+          python3 -m compileall -q publishing
+          node --check publishing/assets/site.js
+          bash -n publishing/build.sh
+
+      - name: Build and verify publication
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+        run: publishing/build.sh
+
+      - name: Verify generated-output boundary
+        run: |
+          test -z "$(git ls-files 'site/**' 'reports/**/report.pdf')"
+          git diff --exit-code -- . ':(exclude)site/**'
+
+      - name: Export publication links
+        id: publication
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+
+          manifest = json.loads(Path("site/publication-manifest.json").read_text())
+          latest = next(item for item in manifest["issues"] if item["slug"] == manifest["latest_issue"])
+          print(f"site_url={manifest['site_url']}")
+          print(f"archive_url={manifest['site_url']}#archive")
+          print(f"latest_issue_url={latest['page_absolute_url']}")
+          print(f"latest_pdf_url={latest['pdf_absolute_url']}")
+          print(f"issue_count={len(manifest['issues'])}")
+          PY
+
+      - name: Write build summary
+        run: |
+          {
+            echo "## Publication build"
+            echo
+            echo "- Site: ${{ steps.publication.outputs.site_url }}"
+            echo "- Latest issue: ${{ steps.publication.outputs.latest_issue_url }}"
+            echo "- Latest PDF: ${{ steps.publication.outputs.latest_pdf_url }}"
+            echo "- Archive: ${{ steps.publication.outputs.archive_url }}"
+            echo "- Published issues: ${{ steps.publication.outputs.issue_count }}"
+            echo "- Source commit: \`${{ github.sha }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload GitHub Pages artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+          include-hidden-files: true
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v6
+
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
+
+      - name: Write deployment summary
+        run: |
+          {
+            echo "## Publication deployed"
+            echo
+            echo "- Deployment: ${{ steps.deployment.outputs.page_url }}"
+            echo "- Latest issue: ${{ needs.build.outputs.latest_issue_url }}"
+            echo "- Latest PDF: ${{ needs.build.outputs.latest_pdf_url }}"
+            echo "- Archive: ${{ needs.build.outputs.archive_url }}"
+            echo "- Published issues: ${{ needs.build.outputs.issue_count }}"
+            echo "- Source commit: \`${{ github.sha }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"

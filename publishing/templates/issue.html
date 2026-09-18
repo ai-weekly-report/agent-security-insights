@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="{{DESCRIPTION}}">
+  <title>{{ISSUE}} · {{TITLE}}</title>
+  {{THEME_BOOTSTRAP}}
+  <link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body class="issue-page">
+  <header class="site-header issue-site-header">
+    <a class="site-brand" href="../../">智能体安全与隐私观察</a>
+    <nav class="site-primary-nav" aria-label="主导航">
+      <a class="header-home-action" href="../../">首页</a>
+      <a href="../../#archive">历期报告</a>
+      <a href="../../methodology/">编写方法</a>
+    </nav>
+    <div class="site-actions">
+      <button class="icon-button" type="button" data-theme-toggle aria-label="切换到夜间模式">
+        <svg class="theme-icon theme-icon-moon" aria-hidden="true"><use href="../../assets/icons.svg#icon-moon"></use></svg>
+        <svg class="theme-icon theme-icon-sun" aria-hidden="true"><use href="../../assets/icons.svg#icon-sun"></use></svg>
+        <span class="sr-only" data-theme-label>切换到夜间模式</span>
+      </button>
+      <a class="icon-button labeled-action header-pdf-action" href="{{PDF_URL}}" aria-label="下载本期 PDF">
+        <svg aria-hidden="true"><use href="../../assets/icons.svg#icon-download"></use></svg>
+        <span>PDF</span>
+      </a>
+      <button class="icon-button labeled-action toc-toggle" type="button" data-page-toc-toggle aria-controls="page-toc" aria-expanded="false" aria-label="打开本页目录">
+        <svg aria-hidden="true"><use href="../../assets/icons.svg#icon-list"></use></svg>
+        <span>目录</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="site-overlay" data-site-overlay hidden></div>
+
+  <main>
+    <header class="issue-hero">
+      <p class="eyebrow">{{ISSUE}}</p>
+      <h1>{{TITLE}}</h1>
+      <p class="issue-meta">观察周期：{{PERIOD}} · 发布日期：{{PUBLISHED_AT}} · 阅读时间：{{READING_TIME}}</p>
+      <p class="issue-description">{{DESCRIPTION}}</p>
+    </header>
+
+    <section class="summary-section" aria-label="本期概要">
+      <div class="summary-content">
+        {{SUMMARY}}
+      </div>
+    </section>
+
+    <div class="article-layout">
+      <article class="report-content">
+        <h2>完整报告</h2>
+        {{REPORT}}
+      </article>
+      {{TOC}}
+    </div>
+
+    <div class="issue-navigation-placeholder"></div>
+  </main>
+
+  <footer>
+    <p><a href="../../">返回首页</a> · <a href="../../methodology/">查看编写方法</a></p>
+  </footer>
+  <script defer src="../../assets/site.js"></script>
+</body>
+</html>
