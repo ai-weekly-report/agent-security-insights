@@ -381,60 +381,49 @@ def manifest_payload(issues: list[Issue], site_url: str) -> dict[str, object]:
                 "page_absolute_url": site_url + urls["page_url"],
                 "pdf_absolute_url": site_url + urls["pdf_url"],
                 "summary_absolute_url": site_url + urls["summary_url"],
-                "summary": _issue_summary_items(issue),
             }
         )
     return {
         "schema_version": 1,
         "site_url": site_url,
         "latest_issue": latest.slug,
-        "latest_url": site_url + "latest.json",
         "issues": issue_payloads,
     }
 
 
-def _machine_issue_payload(issue: dict[str, object]) -> dict[str, object]:
+def _summary_payload(issue: Issue, site_url: str) -> dict[str, object]:
+    site_url = site_url.rstrip("/") + "/"
+    urls = _issue_urls(issue)
     return {
         "schema_version": 1,
-        "slug": issue["slug"],
-        "issue": issue["issue"],
-        "title": issue["title"],
-        "period_start": issue["period_start"],
-        "period_end": issue["period_end"],
-        "published_at": issue["published_at"],
-        "url": issue["page_absolute_url"],
-        "pdf_url": issue["pdf_absolute_url"],
-        "summary_url": issue["summary_absolute_url"],
-        "summary": issue["summary"],
+        "slug": issue.slug,
+        "issue": issue.issue_name,
+        "title": issue.title,
+        "period_start": issue.period_start,
+        "period_end": issue.period_end,
+        "published_at": issue.published_at,
+        "url": site_url + urls["page_url"],
+        "pdf_url": site_url + urls["pdf_url"],
+        "summary": _issue_summary_items(issue),
     }
 
 
-def _write_machine_interfaces(site_root: Path, manifest: dict[str, object]) -> None:
-    issues = manifest["issues"]
-    if not isinstance(issues, list):
-        raise ValueError("Manifest issues must be a list")
-
-    latest_payload: dict[str, object] | None = None
+def _write_summary_interfaces(
+    site_root: Path,
+    issues: list[Issue],
+    site_url: str,
+    generated_at: str,
+    source_commit: str,
+) -> None:
     for issue in issues:
-        if not isinstance(issue, dict):
-            continue
-        payload = _machine_issue_payload(issue)
-        payload["generated_at"] = manifest["generated_at"]
-        payload["source_commit"] = manifest["source_commit"]
-        output = site_root / str(issue["summary_url"])
+        payload = _summary_payload(issue, site_url)
+        payload["generated_at"] = generated_at
+        payload["source_commit"] = source_commit
+        output = site_root / _issue_urls(issue)["summary_url"]
         output.write_text(
             json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
             encoding="utf-8",
         )
-        if issue["slug"] == manifest["latest_issue"]:
-            latest_payload = payload
-
-    if latest_payload is None:
-        raise ValueError("Latest issue payload was not generated")
-    (site_root / "latest.json").write_text(
-        json.dumps(latest_payload, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
 
 
 def _write_issue_html(issue: Issue, site_root: Path, templates: Path) -> None:
@@ -570,7 +559,6 @@ def verify_site(site_root: Path, issues: list[Issue]) -> None:
         site_root / "assets" / "site.css",
         site_root / "assets" / "site.js",
         site_root / "assets" / "icons.svg",
-        site_root / "latest.json",
     ]
     for issue in issues:
         required.extend(
@@ -590,7 +578,7 @@ def verify_site(site_root: Path, issues: list[Issue]) -> None:
         if "report.pdf" not in content and path.name == "index.html" and "issues/" in str(path):
             raise ValueError(f"Issue page has no PDF link: {path}")
     homepage = (site_root / "index.html").read_text(encoding="utf-8")
-    for target in ("latest.json", "publication-manifest.json"):
+    for target in ("publication-manifest.json",):
         if target not in homepage:
             raise ValueError(f"Homepage has no machine interface link for {target}")
 
@@ -674,7 +662,13 @@ def build(
     manifest = manifest_payload(issues, site_url)
     manifest["generated_at"] = datetime.now(timezone.utc).isoformat()
     manifest["source_commit"] = os.environ.get("GITHUB_SHA", "")
-    _write_machine_interfaces(staged, manifest)
+    _write_summary_interfaces(
+        staged,
+        issues,
+        site_url,
+        str(manifest["generated_at"]),
+        str(manifest["source_commit"]),
+    )
     (staged / "publication-manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
@@ -711,7 +705,6 @@ def main() -> None:
     print(f"Published site: {manifest['site_url']}")
     print(f"Latest issue: {latest['page_absolute_url']}")
     print(f"Latest PDF: {latest['pdf_absolute_url']}")
-    print(f"Latest JSON: {manifest['latest_url']}")
     print(f"Archive: {manifest['site_url']}#archive")
 
 

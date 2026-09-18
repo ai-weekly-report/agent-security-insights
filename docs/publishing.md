@@ -62,7 +62,6 @@ python3 -m http.server 8000 --directory site
 ```text
 site/
 ├── index.html
-├── latest.json
 ├── publication-manifest.json
 ├── assets/
 │   ├── site.css
@@ -75,9 +74,10 @@ site/
     └── summary.json
 ```
 
-`latest.json` 保存最新一期结构化概要与 HTML/PDF 地址；`publication-manifest.json`
-保存全部期次及概要；每期 `summary.json` 提供独立历史接口。这些文件属于 Pages 产物，
-不进入 Git。完整格式见 [机器接口说明](machine-api.md)。
+`publication-manifest.json` 是全部期次的轻量索引，并通过 `latest_issue` 指出最新一期；
+每期 `summary.json` 保存结构化概要与 HTML/PDF 地址。机器人先读取索引，再请求对应的
+概要接口。这些文件属于 Pages 产物，不进入 Git。完整格式见
+[机器接口说明](machine-api.md)。
 
 ## 日间与夜间模式
 

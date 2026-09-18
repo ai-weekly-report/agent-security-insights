@@ -130,10 +130,7 @@ class BuildModelTests(unittest.TestCase):
             "issues/2026-08-15_2026-09-14/",
         )
         self.assertTrue(manifest["issues"][0]["pdf_url"].endswith("/report.pdf"))
-        self.assertEqual(
-            manifest["issues"][0]["summary"],
-            [{"title": "重点", "text": "概要正文。"}],
-        )
+        self.assertNotIn("summary", manifest["issues"][0])
         self.assertTrue(
             manifest["issues"][0]["summary_absolute_url"].endswith("/summary.json")
         )

@@ -36,7 +36,6 @@ jobs:
       archive_url: ${{ steps.publication.outputs.archive_url }}
       latest_issue_url: ${{ steps.publication.outputs.latest_issue_url }}
       latest_pdf_url: ${{ steps.publication.outputs.latest_pdf_url }}
-      latest_json_url: ${{ steps.publication.outputs.latest_json_url }}
       manifest_url: ${{ steps.publication.outputs.manifest_url }}
       issue_count: ${{ steps.publication.outputs.issue_count }}
     steps:
@@ -102,7 +101,6 @@ jobs:
           print(f"archive_url={manifest['site_url']}#archive")
           print(f"latest_issue_url={latest['page_absolute_url']}")
           print(f"latest_pdf_url={latest['pdf_absolute_url']}")
-          print(f"latest_json_url={manifest['latest_url']}")
           print(f"manifest_url={manifest['site_url']}publication-manifest.json")
           print(f"issue_count={len(manifest['issues'])}")
           PY
@@ -115,7 +113,6 @@ jobs:
             echo "- Site: ${{ steps.publication.outputs.site_url }}"
             echo "- Latest issue: ${{ steps.publication.outputs.latest_issue_url }}"
             echo "- Latest PDF: ${{ steps.publication.outputs.latest_pdf_url }}"
-            echo "- Latest JSON: ${{ steps.publication.outputs.latest_json_url }}"
             echo "- Publication manifest: ${{ steps.publication.outputs.manifest_url }}"
             echo "- Archive: ${{ steps.publication.outputs.archive_url }}"
             echo "- Published issues: ${{ steps.publication.outputs.issue_count }}"
@@ -157,7 +154,6 @@ jobs:
             echo "- Deployment: ${{ steps.deployment.outputs.page_url }}"
             echo "- Latest issue: ${{ needs.build.outputs.latest_issue_url }}"
             echo "- Latest PDF: ${{ needs.build.outputs.latest_pdf_url }}"
-            echo "- Latest JSON: ${{ needs.build.outputs.latest_json_url }}"
             echo "- Publication manifest: ${{ needs.build.outputs.manifest_url }}"
             echo "- Archive: ${{ needs.build.outputs.archive_url }}"
             echo "- Published issues: ${{ needs.build.outputs.issue_count }}"
